@@ -12,17 +12,19 @@ PID::PID() {}
 
 PID::~PID() {}
 
+
 void PID::Init(double Kp, double Ki, double Kd) {
-    PID::Kp = Kp;
+    PID::Kp = Kp; 
+    //this->Kp = Kp; same
     PID::Ki = Ki;
     PID::Kd = Kd;
     p_error = d_error = i_error = 0.0;
 
     // Twiddling parameters
-    go_twiddle = false;
+    go_twiddle = true;
     dp = {0.1*Kp,0.1*Kd,0.1*Ki};
     step = 1;
-    param_index = 2;  // this will wrao back to 0 after the first twiddle loop
+    param_index = 2;  // this will wrap back to 0 after the first twiddle loop
     n_settle_steps = 100;
     n_eval_steps = 2000;
     total_error = 0;
@@ -40,7 +42,7 @@ void PID::UpdateError(double cte) {
     p_error = cte;
     i_error += cte;
 
-    // update total error only if we're past number of settle steps
+    // update total error only if step past number of settle steps
     if (step % (n_settle_steps + n_eval_steps) > n_settle_steps){
         total_error += pow(cte,2);
     }
@@ -54,7 +56,7 @@ void PID::UpdateError(double cte) {
             cout << "improvement!" << endl;
             best_error = total_error;
             if (step !=  n_settle_steps + n_eval_steps) {
-                // don't do this if it's the first time through
+                // don't do this if it's the first time through, becaseu best_error is max 
                 dp[param_index] *= 1.1;            
             }
             // next parameter

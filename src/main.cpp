@@ -6,7 +6,8 @@
 #include <limits>
 
 // for convenience
-using json = nlohmann::json;
+using json = nlohmann::json;  // JSON for javascript object notation
+using std::string;
 
 // For converting back and forth between radians and degrees.
 constexpr double pi() { return M_PI; }
@@ -20,7 +21,7 @@ std::string hasData(std::string s) {
   auto found_null = s.find("null");
   auto b1 = s.find_first_of("[");
   auto b2 = s.find_last_of("]");
-  if (found_null != std::string::npos) {
+  if (found_null != std::string::npos) { //find null
     return "";
   }
   else if (b1 != std::string::npos && b2 != std::string::npos) {
@@ -34,8 +35,8 @@ int main()
   uWS::Hub h;
 
   // steering and throttle PID controllers
+  PID pid_s, pid_t; 
 
-  PID pid_s, pid_t;
   // TODO: Initialize the pid variable.
     
     // first manual PID tuning : pid_s.Init(0.08, 0.0001, 1.4);
@@ -55,8 +56,7 @@ int main()
 
     //twiddle tuning PID;
   pid_s.Init(0.134611, 0.000270736, 3.05349);
-    
-    
+  
   pid_t.Init(0.316731, 0.0000, 0.0226185);
     
   h.onMessage([&pid_s, &pid_t](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
@@ -72,8 +72,8 @@ int main()
         if (event == "telemetry") {
           // j[1] is the data JSON object
           double cte = std::stod(j[1]["cte"].get<std::string>());
-          //double speed = std::stod(j[1]["speed"].get<std::string>());
-          //double angle = std::stod(j[1]["steering_angle"].get<std::string>());
+          double speed = std::stod(j[1]["speed"].get<std::string>());
+          double angle = std::stod(j[1]["steering_angle"].get<std::string>());
           double steer_value, throttle_value;
           /*
           * TODO: Calcuate steering value here, remember the steering value is
@@ -92,8 +92,9 @@ int main()
             
           pid_t.UpdateError(fabs(cte));     // |cte|
 
-          throttle_value = 0.6 - pid_t.TotalError();
-            //throttle_value = 0.3;
+          throttle_value = 0.75 - pid_t.TotalError();
+          //throttle_value = 0.3;
+
           // DEBUG
           /*
           std::cout << "Steer value breakdown: " << std::endl;
@@ -120,39 +121,24 @@ int main()
     }
   });
 
-  // We don't need this since we're not using HTTP but if it's removed the program
-  // doesn't compile :-(
-  h.onHttpRequest([](uWS::HttpResponse *res, uWS::HttpRequest req, char *data, size_t, size_t) {
-    const std::string s = "<h1>Hello world!</h1>";
-    if (req.getUrl().valueLength == 1)
-    {
-      res->end(s.data(), s.length());
-    }
-    else
-    {
-      // i guess this should be done more gracefully?
-      res->end(nullptr, 0);
-    }
-  });
-
+  
   h.onConnection([&h](uWS::WebSocket<uWS::SERVER> ws, uWS::HttpRequest req) {
     std::cout << "Connected!!!" << std::endl;
   });
 
-  h.onDisconnection([&h](uWS::WebSocket<uWS::SERVER> ws, int code, char *message, size_t length) {
+  h.onDisconnection([&h](uWS::WebSocket<uWS::SERVER> ws, int code, 
+                         char *message, size_t length) {
     ws.close();
     std::cout << "Disconnected" << std::endl;
   });
 
   int port = 4567;
-  if (h.listen(port))
-  {
+  if (h.listen(port)) {
     std::cout << "Listening to port " << port << std::endl;
-  }
-  else
-  {
+  } else {
     std::cerr << "Failed to listen to port" << std::endl;
     return -1;
   }
+  
   h.run();
 }
